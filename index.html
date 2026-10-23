@@ -1,0 +1,927 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>FL Exam Coach</title>
+<link rel="icon" type="image/png" sizes="32x32" href="icons/favicon-32.png">
+<link rel="apple-touch-icon" href="icons/apple-touch-icon.png">
+<link rel="manifest" href="manifest.webmanifest">
+<meta name="theme-color" content="#14213D">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="Exam Coach">
+<meta name="apple-mobile-web-app-status-bar-style" content="black">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Fredoka:wght@500;600&family=Nunito+Sans:wght@600;700;800&display=swap">
+<style>
+/* Layout: one column on phones; lessons left and tutor right from 1000px. Dark navy, heavy text, words next to colors. */
+:root{
+  --bg:#14213D; --bg2:#0F1A33; --card:#22345E; --line:#3A4F7E;
+  --fg:#F5F7FA; --dim:#C9D6EA; --teal:#7FD6D0; --amber:#F2B56B; --ink:#0F1A33; --bad:#FFB4A8;
+  --display:'Fredoka','Trebuchet MS',Arial,sans-serif;
+  --body:'Nunito Sans','Segoe UI',Arial,sans-serif;
+  color-scheme:dark;
+}
+*{box-sizing:border-box}
+html,body{min-height:100%}
+body{margin:0;background:var(--bg);color:var(--fg);font-family:var(--body);font-weight:700;font-size:20px;line-height:1.4;
+  padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px));padding-block:20px 48px}
+.wrap{max-width:1180px;margin:0 auto;display:flex;flex-direction:column;gap:20px}
+h1,h2,h3{font-family:var(--display);font-weight:600;margin:0;line-height:1.15;text-wrap:balance}
+h1{font-size:38px}h2{font-size:30px}h3{font-size:24px}
+p{margin:0}
+button{font:inherit;font-weight:800;cursor:pointer;border:0;border-radius:14px;min-height:56px;padding:12px 20px;color:var(--ink);background:var(--amber)}
+button:focus-visible,input:focus-visible,a:focus-visible,.lesson:focus-visible{outline:4px solid var(--teal);outline-offset:2px}
+button[disabled]{opacity:.55;cursor:not-allowed}
+button.go{background:#4CD27A;color:var(--ink)}
+button.alt{background:var(--teal)}
+button.ghost{background:transparent;color:var(--fg);border:2px solid var(--line)}
+a{color:var(--teal)}
+#leaveBox{position:fixed;inset:0;z-index:50;background:rgba(10,16,32,.85);display:flex;align-items:center;justify-content:center;padding:20px}
+#leaveBox[hidden]{display:none}
+.lvcard{background:var(--card);border:3px solid #FFD84D;border-radius:22px;padding:24px;max-width:460px;width:100%;display:flex;flex-direction:column;gap:16px}
+.lvcard p{margin:0;font-size:22px}.lvcard button{min-height:64px;font-size:22px}
+.pill{display:inline-block;font-weight:800;font-size:15px;letter-spacing:.08em;text-transform:uppercase;border-radius:999px;padding:5px 14px;color:var(--ink)}
+.pill.t{background:var(--teal)}.pill.a{background:var(--amber)}.pill.w{background:var(--fg)}
+header.top{display:flex;flex-wrap:wrap;gap:12px;align-items:center;justify-content:space-between}
+.today{background:var(--card);border-radius:999px;padding:8px 18px;font-size:18px}
+.today b{color:var(--amber)}
+.cols{display:flex;flex-direction:column;gap:20px}
+@media(max-width:999px){.msgs{max-height:40vh;min-height:130px}}
+.tabs{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin:12px 0 0;position:relative;z-index:1}
+.tabs button{background:var(--card);color:var(--fg);border:3px solid var(--line);border-radius:999px;min-height:64px;font-size:21px;padding:8px 4px;white-space:nowrap}
+.tabs button[aria-selected=true]{background:#FFD84D;color:#14213D;border-color:#FFD84D}
+.tabs .dot{display:inline-block;background:var(--amber);color:var(--ink);border-radius:999px;font-size:14px;padding:2px 10px;margin-left:8px;vertical-align:middle}
+.cols>section.panel{border:4px solid #FFD84D}
+.sub{font-size:20px;color:var(--fg);margin-top:4px}
+@media(max-width:999px){h1{font-size:28px}header.top{gap:8px}.wrap{gap:14px}}
+section.panel{background:var(--bg2);border:2px solid var(--line);border-radius:22px;padding:20px;display:flex;flex-direction:column;gap:14px;min-width:0}
+[hidden]{display:none!important}
+/* gate */
+#gate{max-width:560px;margin:8vh auto 0;display:flex;flex-direction:column;gap:18px}
+#gate input{font:inherit;font-weight:800;font-size:24px;min-height:64px;border-radius:14px;border:3px solid var(--line);background:var(--bg2);color:var(--fg);padding:10px 16px;width:100%;letter-spacing:.06em}
+.err{color:var(--bad)}
+/* lessons */
+.lessons{display:flex;flex-direction:column;gap:10px}
+.lesson{display:flex;gap:14px;align-items:center;background:var(--card);border:2px solid transparent;border-radius:16px;padding:12px 14px;text-align:left;width:100%;color:var(--fg);min-height:72px}
+.lesson .n{font-family:var(--display);font-size:34px;min-width:44px;text-align:center;color:var(--amber)}
+.lesson .t{flex:1;min-width:0;font-size:19px;line-height:1.25}
+.lesson.done,.lesson.next{background:#FFD84D;color:#14213D;border-color:#FFD84D}
+.lesson.done .n,.lesson.next .n{color:#14213D}
+.lesson.done .t,.lesson.next .t{font-weight:700}
+.tag.done,.tag.next{background:#14213D;color:#FFD84D}
+.lesson.locked{opacity:1;cursor:not-allowed;background:var(--bg)}
+.lesson.locked .t,.lesson.locked .n{color:var(--dim)}
+.lesson.sel{outline:3px solid var(--teal);outline-offset:2px}
+.tag{font-size:14px;font-weight:800;letter-spacing:.08em;border-radius:999px;padding:4px 12px;color:var(--ink);background:var(--teal)}
+.tag.locked{background:var(--fg)}
+.player{background:var(--card);border-radius:16px;padding:14px;display:flex;flex-direction:column;gap:12px}
+.player audio{width:100%;height:54px;border-radius:12px}
+.row{display:flex;flex-wrap:wrap;gap:10px}
+.note{font-size:17px;color:var(--dim)}
+/* chat */
+.msgs{overflow-anchor:none;display:flex;flex-direction:column;gap:10px;max-height:52vh;min-height:220px;overflow-y:auto;padding:4px}
+.m{max-width:92%;padding:12px 16px;border-radius:16px;white-space:pre-wrap;overflow-wrap:anywhere;font-size:19px;line-height:1.4}
+.m.coach{background:var(--card);align-self:flex-start}
+.m.me{background:var(--teal);color:var(--ink);align-self:flex-end}
+.m.sys{background:transparent;border:2px dashed var(--line);color:var(--dim);align-self:stretch;text-align:center;max-width:100%}
+.quick{display:grid;grid-template-columns:1fr;gap:8px}
+.sidecard{background:var(--card);border:3px solid var(--teal);border-radius:18px;padding:12px 14px;display:flex;flex-direction:column;gap:6px;animation:sidein .28s ease-out;flex-shrink:0}
+.sidehead{display:flex;align-items:center;justify-content:space-between;gap:10px;font-family:var(--display);font-size:19px;color:var(--teal);white-space:nowrap}
+.sidehead button{min-height:44px;padding:6px 16px;font-size:18px;white-space:nowrap}
+.sideq{margin:0;font-size:16px;color:var(--dim);font-style:italic;overflow-wrap:anywhere}
+.sidea{font-size:19px;line-height:1.35;white-space:pre-wrap;overflow-wrap:anywhere}
+#sideBox{position:fixed;inset:0;z-index:50;background:rgba(10,16,32,.88);display:flex;align-items:center;justify-content:center;padding:20px}
+#sideBox[hidden]{display:none}
+.sbcard{border-color:var(--teal)!important;max-height:80vh;overflow-y:auto;animation:sidein .25s ease-out}
+.linkbtn{background:transparent;border:0;color:var(--teal);text-decoration:underline;font:inherit;font-weight:800;font-size:19px;min-height:44px;padding:6px 10px;align-self:flex-start}
+
+#intro{position:fixed;inset:0;z-index:60;background:rgba(10,16,32,.9);display:flex;align-items:center;justify-content:center;padding:14px}
+#intro .icard{background:var(--bg);border:3px solid var(--teal);border-radius:22px;padding:16px;display:flex;flex-direction:column;gap:12px;width:100%;max-width:460px;max-height:100%;overflow-y:auto;animation:sidein .25s ease-out}
+#intro .inever{min-height:48px;font-size:18px}
+#intro[hidden]{display:none}
+#intro .itop{display:flex;justify-content:space-between;align-items:center;min-height:44px}
+#intro .itop span{color:var(--dim);font-size:18px}
+#intro .itop button{min-height:44px;padding:6px 14px;font-size:18px}
+#intro .ibody{display:flex;flex-direction:column;gap:14px}
+#intro h2{font-size:32px}
+#intro p{margin:0;font-size:21px;line-height:1.4}
+#intro .ivis{background:var(--bg2);border:2px solid var(--line);border-radius:18px;padding:16px;display:flex;flex-direction:column;gap:10px;align-items:stretch}
+.ivis .row{display:flex;gap:8px;align-items:center}
+.ivis .pill{border-radius:14px;padding:12px 16px;font-weight:800;text-align:center;flex:1;color:var(--ink)}
+.ivis .y{background:#FFD84D}.ivis .g{background:#4CD27A}.ivis .t{background:var(--teal)}
+.ivis .d{background:var(--card);color:var(--fg);border:2px solid var(--line)}
+.ivis .lrow{display:flex;gap:12px;align-items:center;border-radius:14px;padding:10px 14px;background:#FFD84D;color:#14213D;font-weight:800}
+.ivis .lrow.lk{background:var(--bg);color:var(--dim)}
+.ivis .lrow b{font-family:var(--display);font-size:26px;min-width:30px;text-align:center}
+.ivis .lrow i{margin-left:auto;font-style:normal;font-size:14px;background:#14213D;color:#FFD84D;border-radius:999px;padding:4px 10px}
+.ivis .lrow.lk i{background:#F5F7FA;color:#14213D}
+.ivis .box{border:3px solid var(--line);border-radius:14px;padding:12px 14px;color:var(--dim);background:var(--bg);display:flex;justify-content:space-between;align-items:center;flex:1}
+.ivis img{width:96px;height:96px;border-radius:22px;align-self:center}
+#intro .idots{display:flex;gap:8px;justify-content:center}
+#intro .idots i{width:12px;height:12px;border-radius:50%;background:var(--line)}
+#intro .idots i.on{background:#FFD84D}
+#intro .inav{display:flex;gap:10px}
+#intro .inav button{flex:1;min-height:60px;font-size:22px}
+@keyframes sidein{from{opacity:0;transform:translateY(10px)}to{opacity:1;transform:none}}
+@media(prefers-reduced-motion:reduce){.sidecard{animation:none}}
+.qprog{font-size:18px;font-weight:800;color:var(--fg);margin:0}
+.answers{display:grid;grid-template-columns:repeat(4,1fr);gap:6px}
+.answers button{padding:8px 0;font-size:26px;background:var(--teal);color:var(--ink)}
+.msgs.one .m{max-width:100%;align-self:stretch;font-size:19px;line-height:1.35}
+.quick.solo{grid-template-columns:1fr}
+.quick button.stop{background:#D62F3A;color:#fff;border:0}
+.quick button{padding:10px 6px;font-size:18px}
+.send{display:flex;gap:8px}
+.inwrap{position:relative;flex:1;min-width:0;display:flex}
+.inwrap input{flex:1;padding-right:56px!important}
+#hintBulb{position:absolute;right:6px;top:50%;transform:translateY(-50%);width:44px;height:44px;border-radius:0;border:0;background:transparent;font-size:28px;flex:none;line-height:1;padding:0;display:flex;align-items:center;justify-content:center}
+#hintBulb[hidden],#hintTag[hidden]{display:none}
+#hintBulb b{position:absolute;top:-4px;right:-4px;min-width:18px;height:18px;border-radius:9px;background:var(--teal);color:#14213D;font-size:12px;line-height:18px;text-align:center}
+#hintTag{position:absolute;right:58px;top:50%;transform:translateY(-50%);font-weight:800;font-size:17px;color:var(--teal);pointer-events:none;white-space:nowrap}
+.sidehint+.sidehint{border-top:2px solid var(--line);padding-top:10px;margin-top:4px}
+.send input{flex:1;min-width:0;font:inherit;font-weight:700;font-size:19px;min-height:56px;border-radius:14px;border:3px solid var(--line);background:var(--bg);color:var(--fg);padding:8px 14px}
+.banner{border-radius:14px;padding:12px 16px;background:var(--amber);color:var(--ink);font-weight:800}
+.banner.ok{background:var(--teal)}
+@media(prefers-reduced-motion:no-preference){.m{animation:pop .15s ease-out}@keyframes pop{from{transform:translateY(4px);opacity:.5}to{transform:none;opacity:1}}}
+/* typing focus: fade everything but the box and Ask */
+header.top,.tabs,#pnlT>*,.cols>section.panel{transition:opacity .2s,border-color .2s}
+body.typing header.top,body.typing .tabs,body.typing #pnlT>*:not(#sendForm){opacity:.06}
+body.typing .cols>section.panel{border-color:rgba(127,150,190,.12)}
+/* lock to screen */
+body.locked{overflow:hidden;height:100%;padding-block:10px}
+body.locked html,html:has(body.locked){overflow:hidden;height:100%}
+body.locked .wrap{height:100%;gap:0}
+#app{display:flex;flex-direction:column;min-height:0}
+body.locked #app{height:var(--vh,100dvh)}
+body.locked header.top{flex:0 0 auto;margin-bottom:8px}
+body.locked .tabs{flex:0 0 auto;margin-top:10px;padding-bottom:env(safe-area-inset-bottom,0px)}
+body.locked .cols{flex:1 1 auto;min-height:0}
+body.locked .cols>section.panel{flex:1 1 auto;min-height:0;overflow-y:auto;padding:14px}
+body.locked #pnlT .msgs{flex:1 1 auto;min-height:60px;max-height:none}
+body.locked #pnlT{overflow:hidden}
+body.locked #pnlT>*:not(.msgs){flex-shrink:0}
+#unlockBtn{min-height:64px;font-size:21px;line-height:1.2}
+#home{display:none;flex-direction:column;gap:16px;justify-content:safe center;flex:1 1 auto;min-height:0;overflow-y:auto}
+@media(max-height:700px){#home{gap:10px}#home button,#cmenu button:not(#cBack){min-height:72px!important;font-size:23px!important}#home h2{font-size:26px!important}}
+#app.home #home{display:flex}
+#cmenu{display:none;flex-direction:column;gap:16px;justify-content:safe center;flex:1 1 auto;min-height:0;overflow-y:auto}
+#app.home.cmenu #home{display:none}
+#app.home.cmenu #cmenu{display:flex}
+#cmenu .ctop{display:flex;gap:12px;align-items:center}
+#cmenu .cemoji{font-size:44px;line-height:1}
+#cmenu .ctitle{font-family:var(--display);font-size:28px;line-height:1.1}
+#cmenu .csub{font-size:17px;color:var(--dim)}
+#cmenu .hnext{font-size:19px;margin:0}
+#cmenu button{min-height:96px;font-size:26px;line-height:1.2;background:#FFD84D;color:#14213D}
+#cmenu #cBack{min-height:48px;font-size:18px;align-self:flex-start;padding:6px 16px;background:var(--card);color:var(--fg);border:2px solid var(--line)}
+#home .course{cursor:pointer}
+#home .copen{margin:0;font-weight:800;color:#FFD84D;font-size:18px}
+#app.home .tabs,#app.home .cols{display:none}
+#home h2{font-size:30px;margin:0}
+#home .hmsg{transition:opacity .6s ease}
+#home .hmsg.fade{opacity:0}
+#home .hmsg{border-radius:14px;padding:12px 16px;background:var(--teal);color:var(--ink);font-weight:800}
+#home .clabel{margin:4px 0 -6px;font-size:15px;font-weight:800;letter-spacing:.1em;text-transform:uppercase;color:var(--dim)}
+#home .course{background:var(--card);border:3px solid #FFD84D;border-radius:20px;padding:14px 16px;display:flex;flex-direction:column;gap:10px}
+#home .ctop{display:flex;gap:12px;align-items:center}
+#home .cemoji{font-size:38px;line-height:1}
+#home .ctitle{font-family:var(--display);font-size:24px;line-height:1.1}
+#home .csub{font-size:16px;color:var(--dim)}
+#home .cnew{border:3px dashed var(--line);border-radius:18px;padding:12px;text-align:center;font-weight:800;font-size:18px;color:var(--dim)}
+#home .cnew span{font-weight:600}
+#home .hnext{font-size:19px;margin:0}
+#home .hprog{display:flex;flex-direction:column;gap:8px}
+#home .dots{display:flex;gap:6px;flex-wrap:nowrap}
+#home .dots i{flex:1 1 0;min-width:0;height:14px;border-radius:999px;background:var(--card);border:2px solid var(--line)}
+#home .dots i.on{background:#FFD84D;border-color:#FFD84D}
+#home .dots i.cur{border-color:#FFD84D}
+#home .plabel{font-size:19px;margin:0}
+#sendBtn{background:#FFD84D;color:#14213D;border-color:#FFD84D}
+#home button{min-height:96px;font-size:26px;line-height:1.2;background:#FFD84D;color:#14213D}
+#introBtn{display:none;min-height:40px;padding:4px 12px;font-size:16px;background:var(--card);color:var(--fg);border:2px solid var(--line)}
+#app.home:not(.cmenu) #introBtn{display:inline-flex;align-items:center;order:2;flex:0 0 auto;min-height:36px;padding:2px 10px;font-size:15px}
+#app.home:not(.cmenu) header.top>div:first-child{order:1;flex:1 1 200px;min-width:0}
+#app.home:not(.cmenu) .today{order:3;flex:0 0 auto}
+header.top{position:relative}
+@media(min-width:1000px){header.top .today{position:absolute;left:50%;top:50%;transform:translate(-50%,-50%)}}
+#homeBtn{min-height:44px;padding:6px 14px;font-size:17px;background:var(--card);color:var(--fg);border:2px solid var(--line)}
+@media(max-width:999px){body.locked h1{font-size:24px}body.locked .pill.t{display:none}}
+#ptr{position:fixed;top:0;left:50%;z-index:45;transform:translate(-50%,-70px);background:var(--card);color:var(--fg);border:2px solid #FFD84D;border-radius:999px;padding:8px 20px;font-size:17px;font-weight:800;white-space:nowrap;pointer-events:none;opacity:0;margin-top:max(8px,env(safe-area-inset-top,0px))}
+#ptr.on{opacity:1}#ptr.go{transition:transform .15s}
+</style>
+</head><body>
+
+
+<div id="ptr" role="status" aria-live="polite" hidden></div>
+<div class="wrap">
+  <div id="intro" hidden role="dialog" aria-modal="true" aria-label="How the app works"><div class="icard"><div class="itop"><span id="istep"></span><button id="iskip" type="button" class="ghost">Skip</button></div><div class="ibody"><h2 id="ititle"></h2><div id="ivis" class="ivis"></div><p id="itext"></p></div><div class="idots" id="idots"></div><div class="inav"><button id="iback" type="button" class="ghost">Back</button><button id="inext" type="button" class="alt" style="background:#FFD84D">Next</button></div><button id="inever" type="button" class="ghost inever" hidden>Don't show this again</button></div></div>
+  <div id="sideBox" hidden role="dialog" aria-modal="true" aria-labelledby="sbh"><div class="lvcard sbcard"><div class="sidehead"><span id="sbh">💡 Your hints</span><button id="sbClose" type="button" class="ghost">Got it</button></div><div id="sbl"></div></div></div>
+  <div id="leaveBox" hidden role="dialog" aria-modal="true" aria-labelledby="lvh"><div class="lvcard">
+    <h2 id="lvh">Leave your quiz?</h2>
+    <p>You are in the middle of Lesson <b id="lvn">1</b>. If you leave now, your session is saved and this quiz starts over from question 1.</p>
+    <button id="lvStay" type="button" class="go">Keep going</button>
+    <button id="lvGo" type="button" class="ghost">Save and leave</button>
+  </div></div>
+  <div id="gate" hidden>
+    <span class="pill t">FL Exam 0220</span>
+    <h1>Your FL Exam Coach</h1>
+    <p>Type the access code GiO gave you. You only do this once on this phone.</p>
+    <form id="gateForm" autocomplete="off">
+      <label for="code" class="note">Access code</label>
+      <input id="code" type="text" inputmode="text" autocapitalize="characters" autocomplete="off" spellcheck="false" placeholder="MAGIC-XXXX">
+      <p id="gateErr" class="err" role="alert" hidden></p>
+      <p style="height:12px"></p>
+      <button id="gateBtn" type="submit" class="alt">Open my coach</button>
+    </form>
+  </div>
+
+  <div id="app" hidden>
+    <header class="top">
+      <div><span class="pill t" id="appPill">FL Exam 0220</span><h1 id="appTitle">Your Exam Coach</h1></div>
+      <div class="today" aria-live="off">Studied today: <b id="mins">0</b> min</div>
+      <button id="homeBtn" type="button" hidden>🏠 Home</button>
+      <button id="introBtn" type="button" aria-label="How it works">💡 How it works</button>
+    </header>
+    <section id="home" aria-label="Home">
+      <h2>Welcome back</h2>
+      <p id="hmsg" class="hmsg" hidden></p>
+      <p class="clabel">My courses</p>
+      <div class="course" id="course1" role="button" tabindex="0" aria-label="Open Florida General Lines course">
+        <div class="ctop"><span class="cemoji" aria-hidden="true">🏛️</span><div><div class="ctitle">Florida General Lines</div><div class="csub">Exam 0220 &middot; 12 lessons</div></div></div>
+        <div id="hprog" class="hprog" aria-label="Lessons passed"></div>
+        <p id="hnext" class="hnext"></p>
+        <p class="copen">Tap to open your course ›</p>
+      </div>
+      <div class="course" id="course2" role="button" tabindex="0" aria-label="Open Working With Investors course" hidden>
+        <div class="ctop"><span class="cemoji" aria-hidden="true">🎙️</span><div><div class="ctitle">Working With Investors</div><div class="csub">LMG Managing Director &middot; 8 lessons</div></div></div>
+        <div id="hprog2" class="hprog" aria-label="Lessons passed"></div>
+        <p id="hnext2" class="hnext"></p>
+        <p class="copen">Tap to open your course ›</p>
+      </div>
+      <div class="cnew" aria-label="More courses coming">➕ New course <span>coming soon</span></div>
+      <p class="note" style="opacity:.8;margin:0;text-align:center">Page v95-test &middot; Pull down on this screen to refresh</p>
+    </section>
+    <section id="cmenu" aria-label="Course menu">
+      <button id="cBack" type="button" class="ghost">‹ All courses</button>
+      <div class="ctop"><span class="cemoji" id="mEmoji" aria-hidden="true">🏛️</span><div><div class="ctitle" id="mTitle">Florida General Lines</div><div class="csub" id="mSub">Exam 0220 &middot; 12 lessons</div></div></div>
+      <p id="cnext" class="hnext"></p>
+      <button id="goTutor" type="button" class="alt">🎓 Get coached 🎓</button>
+      <button id="goExam" type="button" class="alt" hidden>📝 Practice exam (50 questions)</button>
+    </section>
+    <div class="cols">
+      <section id="pnlL" class="panel" aria-labelledby="lh" hidden>
+        <h2 id="lh">Your lessons</h2>
+        <p class="note">Tap the yellow lesson to play it. Then tap I finished listening. Your coach quizzes you next.</p>
+        <div id="player" class="player" hidden>
+          <h3 id="ptitle"></h3>
+          <audio id="frame" controls controlsList="nodownload" preload="metadata" title="Lesson audio"></audio>
+          <div class="row">
+            <button id="finish" class="alt" hidden>I finished listening</button>
+          </div>
+          <p id="finMsg" class="note" role="status" hidden></p>
+        </div>
+        <p id="lockNote" class="note"></p>
+        <div id="lessons" class="lessons"></div>
+      </section>
+      <section id="pnlT" class="panel" aria-labelledby="th">
+        <h2 id="th">Your coach</h2>
+        <p id="qprog" class="qprog" hidden></p>
+        <div id="msgs" class="msgs" aria-live="polite"></div>
+                <div id="banner" hidden></div>
+        <button id="unlockBtn" class="go" hidden>Open next lesson</button>
+        <form id="sendForm" class="send" autocomplete="off">
+          <label for="msg" hidden>Your message</label>
+          <div class="inwrap"><input id="msg" type="text" placeholder="Ask your coach…" autocomplete="off"><span id="hintTag" hidden>Hint ➜</span><button id="hintBulb" type="button" hidden aria-label="Show hints">💡</button></div>
+          <button id="sendBtn" type="submit" class="alt">Ask</button>
+        </form>
+        <div class="quick">
+          <button id="qMain" class="go">Start</button>
+          <div id="answers" class="answers" hidden>
+            <button type="button" data-a="A">A</button><button type="button" data-a="B">B</button><button type="button" data-a="C">C</button><button type="button" data-a="D">D</button>
+          </div>
+        </div>
+      </section>
+    </div>
+    <div class="tabs" role="tablist">
+      <button id="tabT" type="button" role="tab" aria-selected="true">💬 Coach</button>
+      <button id="tabL" type="button" role="tab" aria-selected="false">🎧 Lessons<span id="newDot" class="dot" hidden>NEW</span></button>
+    </div>
+  </div>
+</div>
+
+<script>
+(function(){
+  var FL_API='https://hook.us2.make.com/aky1huu3r7o87llxlajly1chy4zr7br2';
+  var INV_API='https://hook.us2.make.com/7nbsykowzlrvt764uvssujtw5hgbyuhg';
+  var AUDIO_BASE='https://lmg-private-audio.gosforms.workers.dev';
+  var INV_LESSONS=[['Why Investors Invest'],['How a Song Earns, and How Slowly'],['Three Ways to Take Money'],['The Waterfall'],['Staying Legal'],['More Than One Investor'],['Real Projects'],['Going International']];
+  var FL_LESSONS=[
+    ['Cancellation, Nonrenewal, Claims','1JTfRm68-5elAHZSAsOARHV4KK-kpqFj3'],
+    ['Property Rules','1M6KSyLmwFILto-V3o1LQaTfv99OeC5Tx'],
+    ['Insurers and Auto','1g1_U5t1A5tNpDD26rqJDi0RrZNU6_hrk'],
+    ['Casualty: General Liability','1sqvJTy22WikYkPsjS5OpVITM1GxwLRbz'],
+    ['Casualty: Auto, Workers Comp, Crime','1u7vP8xMACYTZSweHcLMfMpGCLjQbmMX3'],
+    ['Casualty: Bonds, Liability, Umbrella','1ATvHl-9sDmamx0xbojWX2i6Xt7wZVp6e'],
+    ['Regulators, Licensing, Duties','1X-lRIiUZbNC2u_8mh4Ux4eCk7wm-s0UN'],
+    ['Unfair Practices','1JwMI62VYhGtJtwOuUWI2wymmE9xEaw7E'],
+    ['Property: Policy Types','1pLIrTrXtz8JeRPH-OVOwK7M-UVw6EpHp'],
+    ['FL Law: Health','1dgerRngrxABPMJS-rAsLNEbYZevcff2i'],
+    ['Property: Terms and Provisions','102lU7QBWHSiN--3QitXepQiWYVtgNUU4'],
+    ['Casualty: Terms and Provisions','1C0s_R5-EBvH_dHwIGTpQtSkh1y3jThni']
+  ];
+  var $=function(id){return document.getElementById(id)};
+  function sget(k){try{return localStorage.getItem(k)}catch(e){return null}}
+  function sset(k,v){try{localStorage.setItem(k,v)}catch(e){}}
+  var mem={}; // fallback if storage is blocked
+  function get(k){var v=sget(k);return v===null?(mem[k]||null):v}
+  function set(k,v){mem[k]=v;sset(k,v)}
+  /* ---- course context: Florida (everyone) or Investors (owner code only) ---- */
+  var COURSE=(get('flcourse')==='inv'&&get('flinv')==='1')?'inv':'fl';
+  var INV=COURSE==='inv';
+  var API=INV?INV_API:FL_API, LESSONS=INV?INV_LESSONS:FL_LESSONS, N=INV?8:12, PFX=INV?'inv':'fl', AKEY=get('flakey')||'';
+  var HP=INV?'hprog2':'hprog', HN=INV?'hnext2':'hnext';
+
+  var code=get('flcode')||'', unlocked=1, selected=0, msgs=[], busy=false, confirmFinish=false, lastLine='';
+  /* Study day rolls over at 3 AM local time, so late-night study stays on one day. */
+  function studyDay(){var d=new Date(Date.now()-3*3600*1000),p=function(n){return (n<10?'0':'')+n};return d.getFullYear()+'-'+p(d.getMonth()+1)+'-'+p(d.getDate())}
+  var today=studyDay();
+  var secs=parseInt(get(PFX+'time_'+today)||'0',10)||0, lastActive=Date.now();
+
+  function post(params,api){
+    var body=new URLSearchParams(params);
+    return fetch(api||API,{method:'POST',body:body}).then(function(r){return r.text().then(function(t){return {status:r.status,text:t}})});
+  }
+  function parseUnlocked(t){var m=/unlocked=(\d+)/.exec(t);if(!m)return null;var kk=/akey=([0-9a-f]+)/.exec(t);if(kk){AKEY=kk[1];set('flakey',AKEY)}var raw=parseInt(m[1],10);if(raw>=N+1)set(PFX+'pass_all','1');return Math.max(1,Math.min(N,raw))}
+
+  function parseUnlockedFL(t){var m=/unlocked=(\d+)/.exec(t);if(!m)return null;return Math.max(1,Math.min(12,parseInt(m[1],10)))}
+  /* ---- timer: counts time the page is open and in use ---- */
+  ['click','keydown','touchstart','scroll'].forEach(function(e){window.addEventListener(e,function(){lastActive=Date.now()},{passive:true})});
+  setInterval(function(){
+    if(!code||document.hidden)return;
+    var playing=!$('player').hidden;
+    if(playing||Date.now()-lastActive<180000){secs+=5;set(PFX+'time_'+today,String(secs));showMins()}
+  },5000);
+  function mins(){return Math.round(secs/60)}
+  function showMins(){$('mins').textContent=mins()}
+
+  /* ---- gate ---- */
+  function showGate(msg){$('app').hidden=true;$('gate').hidden=false;var e=$('gateErr');if(msg){e.textContent=msg;e.hidden=false}else e.hidden=true}
+  $('gateForm').addEventListener('submit',function(ev){
+    ev.preventDefault();
+    var c=$('code').value.trim(); if(!c){showGate('Type the code first.');return}
+    $('gateBtn').disabled=true;
+    post({code:c,action:'state'},FL_API).then(function(r){
+      $('gateBtn').disabled=false;
+      if(r.status===401){showGate('That code is not right. Check the message from GiO and try again.');return}
+      var u=parseUnlockedFL(r.text); if(u===null){showGate('Could not connect. Check your internet and try again.');return}
+      code=c;set('flcode',c);var sn=Number(get('flsignins')||'0')+1;set('flsignins',String(sn));
+      /* owner check: only a code the investor backend accepts gets the Investors card */
+      post({code:c,action:'state'},INV_API).then(function(ri){
+        if(ri.status===200&&/unlocked=\d+/.test(ri.text)&&/akey=[0-9a-f]+/.test(ri.text)){set('flinv','1')}else{set('flinv','');set('flakey','')}
+      }).catch(function(){set('flinv','')}).then(function(){
+        set('flcourse','fl');set('flfirst','1');
+        if(sget('flcode')===c){location.reload()}
+        else{COURSE='fl';INV=false;API=FL_API;LESSONS=FL_LESSONS;N=12;PFX='fl';unlocked=u;openApp()}
+      });
+    }).catch(function(){$('gateBtn').disabled=false;showGate('Could not connect. Check your internet and try again.')});
+  });
+
+  /* ---- lessons ---- */
+  function renderLessons(){
+    var box=$('lessons');box.innerHTML='';
+    for(var n=1;n<=N;n++)(function(n){
+      var st=n<unlocked?'done':n===unlocked?'next':'locked',l=LESSONS[n-1];
+      var b=document.createElement('button');b.type='button';
+      b.className='lesson '+st+(selected===n?' sel':'');
+      b.innerHTML='<span class="n">'+n+'</span><span class="t"></span><span class="tag '+st+'">'+(st==='done'?'DONE':st==='next'?'NEXT':'\uD83D\uDD12 LOCKED')+'</span>';
+      b.querySelector('.t').textContent=l[0];
+      if(st==='locked'){b.setAttribute('aria-disabled','true')}
+      else b.addEventListener('click',function(){openPlayer(n)});
+      box.appendChild(b);
+    })(n);
+    var left=N-unlocked;
+    $('lockNote').textContent=left>0?'Yellow lessons are open. Pass the quiz to unlock next lesson.':'All '+N+' lessons are open.';
+  }
+  /* ---- home screen ---- */
+  function passedCount(){var n=0;for(var i=1;i<=N;i++){if(get(PFX+'pass_'+i)==='1'||i<unlocked)n++}return n}
+  function cheerInv(){var n=passedCount(),left=8-n;if(n===0)return '';if(n>=8)return 'All 8 lessons passed. You finished the course.';if(n===4)return 'Halfway there. 4 lessons passed, 4 to go.';return n+' of 8 passed. '+(left===1?'One lesson left.':left+' lessons to go.')}
+  function cheer(){
+    if(INV)return cheerInv();
+    var n=passedCount(),left=12-n,dd=dayGet(),pct=dd.a?Math.round(100*dd.c/dd.a):0,k=Math.floor(Date.now()/86400000)%2,base;
+    if(n===0)return '';
+    else if(n<3)base=[''+n+' of 12 passed. You are off and running.',''+n+(n===1?' lesson':' lessons')+' passed. Keep stacking them.'][k];
+    else if(n<6)base=[''+n+' of 12 passed. You are building real momentum.',''+n+' lessons passed. This is what progress looks like.'][k];
+    else if(n===6)base='Halfway there. 6 lessons passed, 6 to go.';
+    else if(n<10)base=['Past the halfway mark. '+left+' lessons to go.',''+n+' passed. The hard middle is behind you.'][k];
+    else if(n<12)base=['Only '+left+(left===1?' lesson':' lessons')+' left. The finish line is close.',''+n+' of 12 passed. You are almost there.'][k];
+    else base='All 12 lessons passed. You finished the whole course.';
+    if(dd.a>=5&&pct>=80)base+=' That was a strong session.';
+    else if(dd.a>=5&&pct<60)base+=' The ones you missed are where the points are. They get easier next time.';
+    return base;
+  }
+  function drawProg(){
+    var n=passedCount(),h=$(HP);h.innerHTML='';
+    var d=document.createElement('div');d.className='dots';
+    for(var i=1;i<=N;i++){var e=document.createElement('i');if(get(PFX+'pass_'+i)==='1')e.className='on';else if(i===unlocked)e.className='cur';d.appendChild(e)}
+    var t=document.createElement('p');t.className='plabel';t.textContent=n+' of '+N+' lessons passed';
+    h.appendChild(d);h.appendChild(t);
+  }
+  var hmT=0;
+  function setNextTitle(){document.title=(INV?'Investor Course':'FL Exam Coach')+' - Next: Lesson '+unlocked+': '+LESSONS[unlocked-1][0]}
+  function showHome(msg){
+    try{$('frame').pause()}catch(e){}
+    $('app').classList.add('home');$('app').classList.remove('cmenu');setTitle(false);$('homeBtn').hidden=true;side=[];sideOpen=false;syncSide(false);
+    var m=$('hmsg');clearTimeout(hmT);
+    if(!msg&&!m.hidden){m.classList.add('fade');hmT=setTimeout(function(){m.hidden=true;m.classList.remove('fade')},700)}
+    else{m.classList.remove('fade');m.textContent=msg||'';m.hidden=!msg}
+    if(msg){var ms=msg.length<12?3500:Math.min(11000,3500+msg.length*70);hmT=setTimeout(function(){m.classList.add('fade');hmT=setTimeout(function(){m.hidden=true;m.classList.remove('fade')},700)},ms)}
+    syncExam();
+    $(HN).textContent=$('cnext').textContent='Next up: Lesson '+unlocked+', '+LESSONS[unlocked-1][0]+'.';
+    setNextTitle();drawProg();showMins();
+  }
+  document.addEventListener('visibilitychange',function(){if(!document.hidden)checkStale()});
+  function setTitle(fl){$('appPill').hidden=!fl;$('appPill').textContent=INV?'Investor Course':'FL Exam 0220';$('appTitle').textContent=fl?(INV?'Your Investor Coach':'Your FL Exam Coach'):'Your Exam Coach'}
+  function leaveHome(){setTitle(true);checkStale();$('app').classList.remove('home');$('app').classList.remove('cmenu');$('homeBtn').hidden=false}
+  function openCourse(){setTitle(true);$('app').classList.add('cmenu')}
+  function pickCourse(c){
+    if((c==='inv')===INV){openCourse();return}
+    if(c==='inv'&&get('flinv')!=='1')return;
+    set('flcourse',c);set('flgoto','menu');location.reload();
+  }
+  $('course1').addEventListener('click',function(){pickCourse('fl')});
+  $('course1').addEventListener('keydown',function(e){if(e.key==='Enter'||e.key===' '){e.preventDefault();pickCourse('fl')}});
+  $('course2').addEventListener('click',function(){pickCourse('inv')});
+  $('course2').addEventListener('keydown',function(e){if(e.key==='Enter'||e.key===' '){e.preventDefault();pickCourse('inv')}});
+  $('cBack').addEventListener('click',function(){setTitle(false);$('app').classList.remove('cmenu')});
+  (function(){var m=$('msg');
+    m.addEventListener('focus',function(){document.body.classList.add('typing')});
+    m.addEventListener('blur',function(){setTimeout(function(){if(document.activeElement!==m)document.body.classList.remove('typing')},120)});
+  })();
+  $('goExam').addEventListener('click',function(){
+    if(!examReady())return;
+    leaveHome();
+    if(!(ex.on&&ex.k<50)){newEx();msgs=[];save();qz={a:0,c:0};saveQz();setStage('ready')}
+    else if(stage!=='quiz')setStage('ready');
+    showTab('tutor');
+  });
+  $('goTutor').addEventListener('click',function(){leaveHome();if(stage==='ready')setStage('start');showTab('tutor')});
+  function saveDayQuietly(){
+    var dd=dayGet();
+    if(dd.a>0&&dd.sum!==dd.a&&code&&!busy){quietStop=true;sendText('stop');return true}
+    return false;
+  }
+  $('homeBtn').addEventListener('click',function(){
+    if(stage==='done'&&ex.fin){ex.fin=0;saveEx();msgs=[];save();setStage('start')}
+    if(stage==='quiz'&&qz.a>0&&qz.a<10){$('lvn').textContent=unlocked;$('leaveBox').hidden=false;$('lvStay').focus();return}
+    var saving=saveDayQuietly();
+    showHome(saving?'Saving your session...':'');
+  });
+  $('lvStay').addEventListener('click',function(){$('leaveBox').hidden=true});
+  $('lvGo').addEventListener('click',function(){
+    $('leaveBox').hidden=true;
+    var saving=saveDayQuietly();
+    qz={a:0,c:0};saveQz();msgs=[];save();try{stopAudio()}catch(e){}selected=0;$('player').hidden=true;
+    setStage('start');showHome(saving?'Saving your session...':'');
+  });
+  /* ---- tabs ---- */
+  var tab='tutor';
+  function showTab(t,noScroll){
+    tab=t;
+    $('pnlT').hidden=(t!=='tutor');$('pnlL').hidden=(t!=='lessons');
+    $('tabT').setAttribute('aria-selected',t==='tutor');$('tabL').setAttribute('aria-selected',t==='lessons');
+    if(t==='lessons'){$('newDot').hidden=true;}
+    else{try{$('frame').pause()}catch(e){}}
+    if(!noScroll){try{window.scrollTo({top:0,behavior:'smooth'})}catch(e){window.scrollTo(0,0)}}
+  }
+  $('tabT').addEventListener('click',function(){showTab('tutor')});
+  $('tabL').addEventListener('click',function(){showTab('lessons')});
+  (function(){
+    var x0=0,y0=0,t0=0,ok=false;
+    document.addEventListener('touchstart',function(e){
+      var t=e.target,tag=(t.tagName||'').toLowerCase();
+      ok=e.touches.length===1&&!$('app').classList.contains('home')&&tag!=='input'&&tag!=='textarea'&&tag!=='audio'&&!(t.closest&&t.closest('audio,input,textarea,.gate'));
+      x0=e.touches[0].clientX;y0=e.touches[0].clientY;t0=Date.now();
+    },{passive:true});
+    document.addEventListener('touchend',function(e){
+      if(!ok)return;ok=false;
+      var c=e.changedTouches[0],dx=c.clientX-x0,dy=c.clientY-y0;
+      if(Date.now()-t0>700||Math.abs(dx)<70||Math.abs(dx)<Math.abs(dy)*1.6)return;
+      if(dx<0&&tab==='tutor')showTab('lessons');
+      else if(dx>0&&tab==='lessons')showTab('tutor');
+    },{passive:true});
+  })();
+  /* Lock-screen and headphone controls: title, show name, artwork, skip buttons. */
+  function setLockScreen(n){
+    if(!('mediaSession' in navigator)||typeof MediaMetadata==='undefined')return;
+    try{
+      var a=$('frame');
+      navigator.mediaSession.metadata=new MediaMetadata({title:'Lesson '+n+': '+LESSONS[n-1][0],artist:(INV?'Investor Coach':'FL Exam Coach'),album:(INV?'Working With Investors':'Florida General Lines 0220'),artwork:[96,128,192,256,384,512].map(function(z){return {src:new URL('audio/cover-wave.png',location.href).href,sizes:z+'x'+z,type:'image/png'}})});
+      navigator.mediaSession.playbackState=a.paused?'paused':'playing';
+      document.title='Lesson '+n+': '+LESSONS[n-1][0];
+      navigator.mediaSession.setActionHandler('play',function(){a.play()});
+      navigator.mediaSession.setActionHandler('pause',function(){a.pause()});
+      navigator.mediaSession.setActionHandler('seekbackward',function(){a.currentTime=Math.max(0,a.currentTime-15)});
+      navigator.mediaSession.setActionHandler('seekforward',function(){a.currentTime=Math.min(a.duration||1e9,a.currentTime+15)});
+    }catch(e){}
+  }
+  ['loadstart','loadedmetadata','canplay','play','playing','pause'].forEach(function(e){$('frame').addEventListener(e,function(){if(selected&&!$('app').classList.contains('home')){setLockScreen(selected);setTimeout(function(){if(selected&&!$('app').classList.contains('home'))setLockScreen(selected)},800)}})});
+  $('frame').addEventListener('contextmenu',function(e){e.preventDefault()});
+  function stopAudio(){var a=$('frame');try{a.pause()}catch(e){}a.removeAttribute('src');a.load()}
+  function openPlayer(n,quiet){
+    selected=n;confirmFinish=false;
+    $('ptitle').textContent='Lesson '+n+': '+LESSONS[n-1][0];
+    $('frame').src=INV?(AUDIO_BASE+'/lesson'+n+'.m4a?k='+AKEY):('audio/lesson'+n+'.m4a?v=94');
+    $('player').hidden=false;
+    setLockScreen(n);
+    var f=$('finish');f.hidden=(n!==unlocked);f.textContent='I finished listening';
+    $('finMsg').textContent='';
+    renderLessons();
+  }
+    $('finish').addEventListener('click',function(){
+    var n=selected;
+    stopAudio();$('player').hidden=true;selected=0;renderLessons();
+    setStage('ready');showTab('tutor');
+    banner('Nice. Now tap Ready. Your coach will quiz you on Lesson '+n+'.',true,null,true);
+  });
+  /* Next lesson opens only after the coach says the lesson is passed. */
+  function showUnlock(){
+    var b=$('unlockBtn');b.textContent=unlocked<N?'Open Lesson '+(unlocked+1):'Lesson '+N+' passed. Finish the course';b.hidden=false;
+  }
+  $('unlockBtn').addEventListener('click',function(){
+    var b=$('unlockBtn'),n=unlocked;b.disabled=true;
+    post({code:code,action:'done',n:String(n)}).then(function(){return post({code:code,action:'state'})}).then(function(r){
+      var u=parseUnlocked(r.text);b.disabled=false;
+      if(u===null){banner('Could not save. Check your internet and tap again.',false);return}
+      set(PFX+'pass_'+n,'');if(n>=N)set(PFX+'pass_all','1');unlocked=u;selected=0;setNextTitle();setStage('start');b.hidden=true;renderLessons();
+      banner(n>=N?(INV?'All 8 lessons passed. You finished the course. Great work.':'All 12 lessons passed. Great work. The Practice exam is open. Tap Home, then your course.'):'Lesson '+n+' complete. Lesson '+u+' is open. Tap Start. Then open the Lessons tab.',true,null,true);
+      $('newDot').hidden=false;showTab('tutor');
+    }).catch(function(){b.disabled=false;banner('Could not save. Check your internet and tap again.',false)});
+  });
+
+  /* ---- chat ---- */
+  function isQuestion(t){return /(^|\n)\s*\(?A[\)\.:]/.test(t)&&/(^|\n)\s*\(?B[\)\.:]/.test(t)&&/(^|\n)\s*\(?C[\)\.:]/.test(t)}
+  function lastCoach(){for(var i=msgs.length-1;i>=0;i--){if(msgs[i].r==='coach'&&!msgs[i].side)return msgs[i]}return null}
+  var side=[];
+  var sideOpen=false;
+  function syncSide(one){
+    var n=one?side.length:0;
+    var l=$('sbl');l.innerHTML='';
+    side.forEach(function(h,i){
+      var d=document.createElement('div');d.className='sidehint';
+      var q=document.createElement('p');q.className='sideq';q.textContent='Hint '+(i+1)+' · You asked: '+h.q;
+      var a=document.createElement('div');a.className='sidea';a.textContent=h.a;
+      d.appendChild(q);d.appendChild(a);l.appendChild(d);
+    });
+    $('sideBox').hidden=!(n&&sideOpen);
+    $('hintBulb').hidden=!n;$('hintTag').textContent=n>1?'Hints ➜':'Hint ➜';
+    $('msg').placeholder=n?'Ask…':'Ask your coach…';
+    updTag();
+  }
+  function updTag(){var m=$('msg');$('hintTag').hidden=!(side.length&&!m.value&&document.activeElement!==m&&$('sideBox').hidden&&!$('hintBulb').hidden)}
+  function hideSide(){sideOpen=false;syncSide(stage==='quiz'||stage==='retry'||stage==='done')}
+  function openSide(){if(side.length){sideOpen=true;syncSide(true)}}
+  $('sbClose').addEventListener('click',hideSide);
+  $('hintBulb').addEventListener('click',openSide);
+  $('msg').addEventListener('focus',function(){if(sideOpen)hideSide();updTag()});
+  $('msg').addEventListener('blur',function(){setTimeout(updTag,150)});
+  $('msg').addEventListener('input',updTag);
+  $('sideBox').addEventListener('click',function(e){if(e.target===$('sideBox'))hideSide()});
+  document.addEventListener('keydown',function(e){if(e.key==='Escape'&&!$('sideBox').hidden)hideSide()});
+  function renderMsgs(){
+    var box=$('msgs');box.innerHTML='';
+    var one=(stage==='quiz'||stage==='retry'||stage==='done');box.classList.toggle('one',one);$('th').hidden=one;
+    if(!msgs.length){var s=document.createElement('div');s.className='m sys';s.textContent=(stage==='ready'?'Tap Ready when you want your quiz.':'Tap Start. Your coach names today\'s lesson.');box.appendChild(s)}
+    var list=msgs;
+    if(one){
+      var lc=lastCoach(),tail=msgs[msgs.length-1];
+      list=[];
+      if(tail&&tail.r==='sys')list=[tail];
+      else if(lc)list=[lc];
+      else list=msgs.slice(-2);
+    }
+    list.forEach(function(m){var d=document.createElement('div');d.className='m '+(m.r==='me'?'me':m.r==='sys'?'sys':'coach');d.textContent=m.t;box.appendChild(d)});
+    syncSide(one);
+    function fit(){
+      if(one){box.scrollTop=0;return}
+      box.scrollTop=box.scrollHeight;
+      var ms=box.querySelectorAll('.m.coach'),le=ms[ms.length-1];
+      if(le&&le===box.lastElementChild&&le.offsetHeight>box.clientHeight-8){box.scrollTop+=le.getBoundingClientRect().top-box.getBoundingClientRect().top-4}
+    }
+    fit();if(window.requestAnimationFrame)requestAnimationFrame(function(){fit();setTimeout(fit,60)});
+    controls();
+  }
+  function save(){var keep=msgs.filter(function(m){return m.r!=='sys'}).slice(-30);set(PFX+'chat_'+today,JSON.stringify(keep))}
+  function loadChat(){try{msgs=JSON.parse(get(PFX+'chat_'+today)||'[]')||[]}catch(e){msgs=[]}}
+  function banner(t,ok,retry,keep){
+    var b=$('banner');if(!t){b.hidden=true;return}
+    b.className='banner'+(ok?' ok':'');b.textContent=t;b.hidden=false;
+    if(retry){var r=document.createElement('button');r.textContent='Try again';r.style.marginLeft='12px';r.style.minHeight='44px';r.addEventListener('click',retry);b.appendChild(r)}
+    else if(!keep)setTimeout(function(){if(b.textContent===t)b.hidden=true},9000);
+  }
+  function setBusy(v){busy=v;['qMain','sendBtn','msg','answers'].forEach(function(i){$(i).disabled=v})}
+  var qz={a:0,c:0};try{qz=JSON.parse(get(PFX+'chat_qz')||'{"a":0,"c":0}')||{a:0,c:0}}catch(e){qz={a:0,c:0}}
+  function saveQz(){set(PFX+'chat_qz',JSON.stringify(qz))}
+  /* ---- practice exam: opens after all 12 lessons are passed; 50 questions, spread over all 12 lessons ---- */
+  var ex={on:0,k:0,c:0,sched:[],miss:{},stems:{},fin:0};
+  try{var _e=JSON.parse(get(PFX+'chat_exam')||'null');if(_e&&_e.sched)ex=_e}catch(e){}
+  function saveEx(){set(PFX+'chat_exam',JSON.stringify(ex))}
+  function newEx(){
+    var s=[],r,i,j,x,t;
+    for(r=0;r<4;r++)for(i=1;i<=12;i++)s.push(i);
+    s.push(1,3);
+    for(j=s.length-1;j>0;j--){x=Math.floor(Math.random()*(j+1));t=s[j];s[j]=s[x];s[x]=t}
+    ex={on:1,k:0,c:0,sched:s,miss:{},stems:{},fin:0};saveEx();
+  }
+  function examReady(){if(INV)return false;return get(PFX+'pass_all')==='1'||(unlocked>=12&&get(PFX+'pass_12')==='1')}
+  function syncExam(){
+    var b=$('goExam');b.hidden=!examReady();
+    b.textContent=(ex.on&&ex.k>0&&ex.k<50)?'\uD83D\uDCDD Resume practice exam ('+ex.k+' of 50)':'\uD83D\uDCDD Practice exam (50 questions)';
+  }
+  function examReport(){
+    var pct=Math.round(100*ex.c/50),ms=[],l;
+    for(l in ex.miss)ms.push([l,ex.miss[l]]);
+    ms.sort(function(a,b){return b[1]-a[1]||a[0]-b[0]});
+    var t='PRACTICE EXAM DONE: '+ex.c+' of 50 ('+pct+'%).\n'+(ex.c>=40?'You reached the 80% level.':'Not at the 80% level yet.');
+    if(ms.length)t+='\nRe-listen to: '+ms.map(function(m){return 'Lesson '+m[0]+' ('+m[1]+' missed)'}).join(', ')+'.';
+    else t+=' Perfect run.';
+    return t+'\nDo not book your retake yet. Tell GiO your score.';
+  }
+  function logExam(){
+    var ms=[],l;for(l in ex.miss)ms.push([l,ex.miss[l]]);
+    ms.sort(function(a,b){return b[1]-a[1]||a[0]-b[0]});
+    var params={code:code,action:'exam',correct:String(ex.c),missed:ms.map(function(m){return 'L'+m[0]+' ('+m[1]+')'}).join(', ')};
+    function go(n){post(params).then(function(r){if(!(r.status===200&&/saved/.test(r.text))&&n<3)setTimeout(function(){go(n+1)},4000*(n+1))}).catch(function(){if(n<3)setTimeout(function(){go(n+1)},4000*(n+1))})}
+    go(0);
+  }
+  function examNote(){
+    var ns=msgs.filter(function(m){return m.r!=='sys'}),tm=ns[ns.length-1];
+    var cmd=(tm&&tm.r==='me'&&/^\s*(ready|next)\W*$/i.test(tm.t))?'The student message is a button command. NO question is waiting. Any earlier question in the transcript is finished. Ask the next question now in the QUESTION FORMAT. ':'';
+    var L=ex.sched[Math.min(ex.k,49)],prev=[],pl;for(pl in ex.stems)ex.stems[pl].forEach(function(x){prev.push(x.slice(0,80))});prev=prev.join(' || ');
+    return cmd+'PAGE NOTE (from the page, not the student): PRACTICE EXAM mode, question '+(ex.k+1)+' of 50. This overrides the lesson loop. When you ask a question, draw it ONLY from the TAUGHT FACTS of Lesson '+L+'. Do not repeat or reword a fact already asked in this exam, even if it came from another lesson. Pick a different fact from Lesson '+L+'. Already asked: '+(prev||'none yet')+'. Ask ONE multiple-choice question in the QUESTION FORMAT, four options, one correct, nothing else in that message. When the student message is a letter or an answer, reply in this exact shape: the first word is Correct. or Incorrect. Then one short line with the right answer and the statute number if there is one. Then: Tap Next question. No memory tricks. Never say Lesson passed. Never say READY TO BOOK. Never give a running score or a final score; the page does that. NO HINTS in the practice exam: if a question is waiting and the student asks anything, begin with ASK| and say only: No hints during the practice exam.\n';
+  }
+  var RESULT=/^\W*(that is |that's |you are |you're )?(correct|right|incorrect|wrong|not quite)/i;
+  var RIGHT=/^\W*(that is |that's |you are |you're )?(correct|right)\b/i;
+  function quizNote(){
+    if(stage!=='quiz')return '';
+    if(ex.on)return examNote();
+    var ns=msgs.filter(function(m){return m.r!=='sys'}),tm=ns[ns.length-1],cmd=(tm&&tm.r==='me'&&/^\s*(ready|next)\W*$/i.test(tm.t))?'The student message is a button command. NO question is waiting. Any earlier question in the transcript is finished. Ask the next quiz question now in the QUESTION FORMAT. Do not tell the student to tap a letter. ':'';
+    return cmd+(INV?'COURSE RULE: this page runs no mixed reviews. Ignore the mixed-review step. When Lesson 8 is passed, say Lesson passed and also say COURSE COMPLETE. ':'')+'PAGE NOTE (from the page, not the student): Lesson '+unlocked+' quiz. Answers graded so far: '+qz.a+' of 10. Correct so far: '+qz.c+'. The quiz is exactly 10 questions. Start every result with the single word Correct. or Incorrect. If the student message is the 10th answer, give the result, then the lesson score out of 10 and the percent, and say Lesson passed only if 8 or more of 10 are correct. Never ask a question after the 10th answer. If the student message is next and 10 answers are already graded, do not ask another question: repeat the final score in one line. HINT RULE (overrides any earlier hint instruction): when a question is waiting and the student asks for a hint, begin with ASK| and give a NUDGE ONLY, in one or two short sentences. Allowed: name the topic or the statute area the question is about, and tell the student to think about what that rule covers. Forbidden: any number, day count, dollar amount, percent, or time period. Forbidden: any memory trick, rhyme, or pattern tied to the answer. Forbidden: saying what the rule says, what a correct option would contain, which options are wrong, or any letter. Forbidden: saying a number is bigger, smaller, longer, or shorter than another. Test before sending: if a student could pick the right option from your hint alone, delete the hint and say only the topic name. Never tell the student to guess, pick, tap, or choose an option; the buttons are already on screen. The full explanation comes in the result after they answer.\n'+(side.length?('HINT '+(side.length+1)+' FOR THIS QUESTION: the student already got '+side.length+' hint(s) on this question (see the transcript). Do NOT repeat or reword them. Build on them: add one NEW angle that narrows the topic one step further, such as why the rule exists, who it protects, what event triggers it, or which kind of policy it applies to. Say it in plain words. Still no numbers, no letters, no comparisons, no memory tricks, and do not say which options are wrong. Never reply with only take your best guess. The hints together should lead the student to reason toward the answer on their own.\n'):'');
+  }
+  function transcript(){
+    return quizNote()+msgs.filter(function(m){return m.r!=='sys'}).slice(-24).map(function(m){return (m.r==='me'?'Student: ':'Coach: ')+m.t}).join('\n');
+  }
+  var stopping=false,quietStop=false;
+  var IDLE_MS=30*60*1000;
+  function touchQuiz(){set(PFX+'quiz_t',String(Date.now()))}
+  function checkStale(){
+    if(stage==='quiz'&&qz.a>0&&Date.now()-Number(get(PFX+'quiz_t')||0)>IDLE_MS){
+      qz={a:0,c:0};saveQz();msgs=[];save();side=[];setStage('start');return true;
+    }
+    return false;
+  }
+  function sendText(text){
+    if(String(text).trim().toLowerCase()==='stop')stopping=true;
+    text=(text||'').trim();if(!text||busy)return;
+    $('banner').hidden=true;
+    if(stage==='quiz')touchQuiz();
+    var meMsg={r:'me',t:text};msgs.push(meMsg);save();renderMsgs();setBusy(true);
+    var wait={r:'sys',t:'Your coach is typing...'};msgs.push(wait);renderMsgs();
+    var attempt=0;
+    function ask(){
+      return post({code:code,action:'chat',minutes:String(mins()),transcript:transcript(),retry:String(attempt)}).catch(function(e){
+        if(attempt<3){attempt++;return new Promise(function(res){setTimeout(res,1500*attempt)}).then(ask)}
+        throw e;
+      }).then(function(r){
+        if(!r||typeof r.status==='undefined')return r;
+        if(r.status===200&&/^The tutor is busy/.test((r.text||'').trim())&&attempt<3){
+          attempt++;
+          return new Promise(function(res){setTimeout(res,1500*attempt)}).then(ask);
+        }
+        return r;
+      });
+    }
+    ask().then(function(r){
+      var wx=msgs.indexOf(wait);if(wx>-1)msgs.splice(wx,1);
+      if(r.status===401){code='';set('flcode','');set('flinv','');set('flcourse','fl');showGate('Your code stopped working. Type it again.');return}
+      var reply=(r.text||'').trim()||'The coach did not answer. Tap the button again.';
+      reply=reply.replace(/\btutoring\b/g,'coaching').replace(/\bTutoring\b/g,'Coaching').replace(/\btutored\b/g,'coached').replace(/\bTutored\b/g,'Coached').replace(/\btutors\b/g,'coaches').replace(/\btutor\b/g,'coach').replace(/\bTutor\b/g,'Coach');
+      reply=reply.replace(/tabs? (?:is |are )?(?:at |on )?the top/ig,function(x){return x.replace(/top/i,'bottom')}).replace(/\b(Lessons|Tutor) tab at the top/g,'$1 tab at the bottom').replace(/\bthe top (Lessons|Tutor) tab/g,'the $1 tab at the bottom');
+      reply=reply.replace(/(?:and |then )?(?:press|hit|tap) (?:the )?play(?: button)?/ig,function(x){return /^(and|then) /i.test(x)?x.split(' ')[0]+' tap Lesson '+unlocked:(/^[A-Z]/.test(x)?'Tap':'tap')+' Lesson '+unlocked});
+      var m=/^DAILY\|.*$/m.exec(reply);
+      if(m){
+        reply=reply.replace(m[0],'').replace(/\n{3,}/g,'\n\n').trim();
+        logLine(m[0].trim(),stopping&&!quietStop);
+      }
+      if(quietStop){quietStop=false;stopping=false;var qx=msgs.indexOf(meMsg);if(qx>-1)msgs.splice(qx,1);save();renderMsgs();if(!m&&$('app').classList.contains('home'))showHome('');return}
+      var sideRep=false;
+      if(/^\W*ASK\|/i.test(reply)){reply=reply.replace(/^\W*ASK\|\s*/i,'').trim();reply=reply.replace(/\s*(?:please\s+)?(?:take|make) (?:your|a) best guess[^.!?\n]*[.!?]?/ig,'').replace(/\s*(?:please\s+)?(?:pick|choose|tap|select)(?: one of)? (?:option |the answer |your answer )?(?:A, B, C,? (?:or|and) D|a letter|an option)[^.!?\n]*[.!?]?/ig,'').trim()||reply;sideRep=true}
+      var inOne=(stage==='quiz'||stage==='retry'||stage==='done');
+      if(sideRep&&/^\s*(start|go|ready|next|stop|[abcd]|i finished listening)\W*$/i.test(text))sideRep=false;
+      if(sideRep&&inOne&&reply){
+        msgs.push({r:'coach',t:reply,side:true});side.push({q:text,a:reply});sideOpen=true;var dh=dayGet();dh.h=(dh.h||0)+1;daySave(dh);if(dh.a>0)autoSave();save();renderMsgs();return;
+      }
+      var wasEx=!!ex.on;
+      if(reply){msgs.push({r:'coach',t:reply});side=[];sideOpen=false}
+      if(wasEx&&stage==='quiz'&&reply&&isQuestion(reply)){var Lq=ex.sched[Math.min(ex.k,49)];(ex.stems[Lq]=ex.stems[Lq]||[]).push(reply.split('\n')[0].slice(0,110));saveEx()}
+      if(m)stopping=false;
+      if(stopping&&!m){stopping=false;save();renderMsgs();setStage('start');showHome(cheer());return}
+      if(wasEx&&stage==='quiz'&&RESULT.test(reply)&&!isQuestion(reply)){
+        touchQuiz();var rtx=RIGHT.test(reply),Lr=ex.sched[Math.min(ex.k,49)];ex.k++;if(rtx)ex.c++;else ex.miss[Lr]=(ex.miss[Lr]||0)+1;
+        if(ex.k>=50){ex.on=0;ex.fin=1;logExam();var lm=msgs[msgs.length-1];if(lm&&lm.r==='coach')lm.t+='\n\n'+examReport();setStage('done')}
+        saveEx();
+      }
+      else if(stage==='quiz'&&RESULT.test(reply)&&!isQuestion(reply)){
+        touchQuiz();qz.a++;var rt=RIGHT.test(reply);if(rt)qz.c++;saveQz();var dd=dayGet();dd.a++;if(rt)dd.c++;daySave(dd);autoSave();
+        if(qz.a>=10){
+          if(/(lesson|unit) passed/i.test(reply)){setStage('done')}
+          else{setStage('retry')}
+        }
+      }
+      if(!wasEx&&/(lesson|unit) passed/i.test(reply)){set(PFX+'pass_'+unlocked,'1');showUnlock()}
+      save();renderMsgs();
+    }).catch(function(){
+      if(quietStop){quietStop=false;stopping=false;if($('app').classList.contains('home'))showHome('')}
+      var wi=msgs.indexOf(wait);if(wi>-1)msgs.splice(wi,1);
+      var mi=msgs.indexOf(meMsg);if(mi>-1)msgs.splice(mi,1);
+      save();renderMsgs();
+      banner('Could not reach your coach. Tap Try again.',false,function(){$('banner').hidden=true;sendText(text)});
+    }).then(function(){setBusy(false);$('msg').focus&&0});
+  }
+  var UNITOF=INV?[0,1,2,3,4,5,6,7,8]:[0,1,1,1,2,2,2,3,3,4,5,6,7];
+  function dayGet(){try{return JSON.parse(get(PFX+'day_'+today)||'null')||{a:0,c:0,eps:[],x:''}}catch(e){return {a:0,c:0,eps:[],x:''}}}
+  function daySave(d){set(PFX+'day_'+today,JSON.stringify(d))}
+  function pad2(n){return (n<10?'0':'')+n}
+  function buildLine(tutorLine){
+    var d=dayGet(),f={};
+    if(tutorLine){d.x=tutorLine;daySave(d)}
+    var src=d.x||'';
+    src.split('|').forEach(function(p,i){if(i)f[p.trim().split(/[ :]/)[0]]=p.trim()});
+    var ep='Ep'+pad2(unlocked);if(d.eps.indexOf(ep)<0){d.eps.push(ep);daySave(d)}
+    var pct=d.a?Math.round(100*d.c/d.a):0;
+    var rest=[f.weakest||(INV?'weakest topic':'weakest FL law General Lines'),f.missed||'missed: -',f.sections||'sections: -'];
+    return 'DAILY|minutes '+mins()+'|questions '+d.a+'|correct '+pct+'|unit '+UNITOF[unlocked]+'|passed '+(get(PFX+'pass_'+unlocked)==='1'?'yes':'no')+'|episodes '+d.eps.join(' ')+'|'+rest.join('|')+'|hints '+(d.h||0);
+  }
+  function autoSave(){
+    if(!code)return;
+    var line=buildLine('');
+    post({code:code,action:'log',line:line,day:today}).catch(function(){});
+  }
+  function logLine(line,goHome){
+    line=buildLine(line);
+    if(line===lastLine)return;
+    post({code:code,action:'log',line:line,day:today}).then(function(r){
+      if(r.status===200&&/saved/.test(r.text)){lastLine=line;var d2=dayGet();d2.sum=d2.a;daySave(d2);stopping=false;if(goHome||$('app').classList.contains('home'))showHome(cheer());else banner('Session saved.',true)}
+      else banner('Your session did not save.',false,function(){logLine(line)});
+    }).catch(function(){banner('Your session did not save. Check your internet.',false,function(){logLine(line)})});
+  }
+  /* One big button: Start, then Ready after listening, hidden during the quiz. */
+  var stage=get(PFX+'chat_stage')||'start';
+  /* New study day: a quiz left open last night restarts clean at Ready. */
+  if(get(PFX+'chat_stageday')&&get(PFX+'chat_stageday')!==today&&stage==='quiz'){stage='ready';set(PFX+'chat_stage',stage);if(!ex.on){qz={a:0,c:0};saveQz()}}
+  set(PFX+'chat_stageday',today);
+  function controls(){
+    var qp=$('qprog');
+    var b=$('qMain'),a=$('answers'),q=document.querySelector('.quick');
+    var passed=(get(PFX+'pass_'+unlocked)==='1');
+    (function(){var lc0=lastCoach(),t0=msgs[msgs.length-1];
+      if(stage==='quiz'||stage==='retry'||stage==='done'){
+        var isQ=!!(lc0&&t0&&t0.r==='coach'&&isQuestion(lc0.t));
+        qp.hidden=false;
+        if(ex.on&&stage==='quiz')qp.textContent=isQ?('Practice exam: question '+Math.min(50,ex.k+1)+' of 50'):(ex.k+' of 50 answered.');
+        else if(ex.fin&&stage==='done')qp.textContent='Practice exam finished.';
+        else qp.textContent=(stage==='quiz'&&isQ)?('Question '+Math.min(10,qz.a+1)+' of 10'):(qz.a+' of 10 answered. '+qz.c+' right.');
+      }else qp.hidden=true;
+    })();
+    if(stage==='retry'){b.hidden=false;a.hidden=true;b.textContent='Listen again';q.classList.remove('solo');return}
+    if(stage==='done'){b.hidden=true;a.hidden=true;q.classList.add('solo');return}
+    if(stage!=='quiz'){b.hidden=false;a.hidden=true;b.textContent=(stage==='ready')?(ex.on?(ex.k>0?'Resume practice exam':'Start practice exam'):'Ready'):'Start';q.classList.remove('solo');return}
+    var lc=lastCoach(),tail=msgs[msgs.length-1];
+    var waiting=!!(tail&&tail.r==='sys'&&/typing/.test(tail.t));
+    var question=!!(lc&&tail&&tail.r==='coach'&&isQuestion(lc.t));
+    a.hidden=!question;
+    b.hidden=question||passed||!lc||waiting;
+    b.textContent='Next question';
+    q.classList.toggle('solo',b.hidden&&a.hidden);
+  }
+  function setStage(x){stage=x;set(PFX+'chat_stage',x);side=[];sideOpen=false;renderMsgs()}
+  $('qMain').addEventListener('click',function(){
+    if(stage==='retry'){showTab('lessons');return}
+    if(stage==='ready'){if(!ex.on){qz={a:0,c:0};saveQz()}msgs=[];save();setStage('quiz');touchQuiz();sendText('ready')}
+    else if(stage==='quiz'){sendText('next')}
+    else sendText('start');
+  });
+  $('answers').addEventListener('click',function(e){var a=e.target&&e.target.getAttribute&&e.target.getAttribute('data-a');if(a)sendText(a)});
+  $('sendForm').addEventListener('submit',function(e){
+    e.preventDefault();var v=$('msg').value;$('msg').value='';
+    if(!busy&&/^\s*(ready|next|start|go)\W*$/i.test(v)){
+      if(stage==='start'&&/^\s*(start|go)\W*$/i.test(v)){$('qMain').click();return}
+      if(stage==='start'){
+        msgs.push({r:'me',t:v.trim()});
+        msgs.push({r:'coach',t:'Today: Lesson '+unlocked+', '+LESSONS[unlocked-1][0]+'. Tap the Lessons tab at the bottom and tap Lesson '+unlocked+'. When the audio ends, tap I finished listening. Then tap Ready.'});
+        save();renderMsgs();return;
+      }
+      if(!$('qMain').hidden&&(stage==='ready'||stage==='quiz')){$('qMain').click();return}
+    }
+    sendText(v);
+  });
+
+
+  /* lock the page to the visible screen; the chat and lesson list scroll inside */
+  function fit(){
+    try{var h=(window.visualViewport?window.visualViewport.height:window.innerHeight);
+    document.documentElement.style.setProperty('--vh',(h-20)+'px');window.scrollTo(0,0)}catch(e){}
+  }
+  try{if(window.visualViewport){visualViewport.addEventListener('resize',fit);visualViewport.addEventListener('scroll',fit)}window.addEventListener('resize',fit)}catch(e){}
+  function openApp(){
+    $('gate').hidden=true;$('app').hidden=false;document.body.classList.add('locked');fit();
+    setStage(stage);showTab('tutor',true);loadChat();renderMsgs();renderLessons();showMins();if(get(PFX+'pass_'+unlocked)==='1')showUnlock();
+    showHome('');
+    $('course2').hidden=(get('flinv')!=='1');
+    if(INV){$('mEmoji').textContent='🎙️';$('mTitle').textContent='Working With Investors';$('mSub').innerHTML='LMG Managing Director &middot; 8 lessons'}
+    if(get('flgoto')==='menu'){set('flgoto','');openCourse()}
+    else if(get('flfirst')==='1'){set('flfirst','');if(get('flintro_off')!=='1')tourOpen(true)}
+    else set('flfirst','');
+  }
+
+  /* ---- first sign-in tour ---- */
+  var TOUR=[
+    ['Welcome to your Exam Coach','<img src="icons/icon-192.png" alt="">','Your coach for the Florida General Lines exam (0220). 12 audio lessons. A short quiz after each one. This tour takes one minute.'],
+    ['Start on Home','<div class="lrow"><b>🏛️</b>Florida General Lines<i>OPEN</i></div><div class="pill y">🎓 Get coached 🎓</div>','Tap the Florida General Lines card. Then tap the big yellow button.'],
+    ['Tap Start','<div class="pill g">Start</div>','Your coach names today\'s lesson and tells you what to do next.'],
+    ['Listen to the lesson','<div class="row"><div class="pill d">💬 Coach</div><div class="pill y">🎧 Lessons</div></div><div class="lrow"><b>1</b>Today\'s lesson<i>NEXT</i></div><div class="pill t">I finished listening</div>','Tap the Lessons tab at the bottom. Tap the yellow lesson and listen. When it ends, tap I finished listening.'],
+    ['Take the quiz','<div class="pill g">Ready</div><div class="row"><div class="pill t">A</div><div class="pill t">B</div><div class="pill t">C</div><div class="pill t">D</div></div>','Tap Ready. You get 10 questions, one at a time. Tap A, B, C or D. Score 80% or higher to pass.'],
+    ['Ask for help any time','<div class="row"><div class="box">Ask…<span>💡</span></div><div class="pill y" style="flex:none">Ask</div></div>','Type a question in the box. Ask for a hint and a 💡 shows up. Tap it to read your hints again. A hint is a nudge. It never gives the answer.'],
+    ['Pass and move on','<div class="lrow"><b>1</b>Lesson 1<i>DONE</i></div><div class="lrow"><b>2</b>Lesson 2<i>NEXT</i></div><div class="lrow lk"><b>3</b>Lesson 3<i>🔒 LOCKED</i></div>','Pass the quiz and your coach says Lesson passed. Tap the green button and the next lesson opens. Lessons open one at a time.'],
+    ['You are all set','<div class="pill y">🏠 Home</div>','Study 1 to 2 hours a day. Tap Home when you finish and your session is saved. You can replay this tour with How it works on the Home screen.']
+  ];
+  if(INV){TOUR.forEach(function(t){t[0]=t[0].replace('Exam Coach','Investor Coach');t[1]=t[1].split('Florida General Lines').join('Working With Investors').split('🏛️').join('🎙️');t[2]=t[2].replace('Your coach for the Florida General Lines exam (0220). 12 audio lessons.','Your coach for the Working With Investors course. 8 audio lessons.').split('Florida General Lines').join('Working With Investors')})}
+  var tourI=0,tourN=0,tourAuto=false;
+  function tourShow(){
+    var t=TOUR[tourI],last=tourI===TOUR.length-1;
+    $('istep').textContent='Step '+(tourI+1)+' of '+TOUR.length;
+    $('ititle').textContent=t[0];$('ivis').innerHTML=t[1];$('itext').textContent=t[2];
+    $('iback').style.visibility=tourI?'visible':'hidden';
+    $('inext').textContent=last?'Let\'s go':'Next';$('iskip').hidden=last||tourN<2;
+    $('inever').hidden=!(tourAuto&&tourN>=3&&!last);
+    var d=$('idots');d.innerHTML='';TOUR.forEach(function(x,i){var e=document.createElement('i');if(i===tourI)e.className='on';d.appendChild(e)});
+  }
+  function tourOpen(auto){tourAuto=!!auto;tourN=auto?Number(get('flsignins')||'1'):99;tourI=0;tourShow();$('intro').hidden=false;$('inext').focus()}
+  function tourClose(){$('intro').hidden=true}
+  $('inever').addEventListener('click',function(){set('flintro_off','1');tourClose()});
+  $('inext').addEventListener('click',function(){if(tourI>=TOUR.length-1){tourClose();return}tourI++;tourShow()});
+  $('iback').addEventListener('click',function(){if(tourI>0){tourI--;tourShow()}});
+  $('iskip').addEventListener('click',tourClose);
+  $('introBtn').addEventListener('click',function(){tourOpen(false)});
+  var wantExam=false;try{wantExam=/[?&]exam=1/.test(location.search)}catch(e){}
+  /* ---- tester reset: add ?reset=1 to the link to clear this phone's chat and minutes ---- */
+  try{if(/[?&]reset=1/.test(location.search)){Object.keys(localStorage).forEach(function(k){if(/^(flchat_|fltime_|flpass_|flday_|invchat_|invtime_|invpass_|invday_|invquiz_)/.test(k))localStorage.removeItem(k)});for(var k in mem){if(/^(flchat_|fltime_|flpass_|flday_|invchat_|invtime_|invpass_|invday_|invquiz_)/.test(k))delete mem[k]}secs=0;stage='start';qz={a:0,c:0};ex={on:0,k:0,c:0,sched:[],miss:{},stems:{},fin:0};history.replaceState(null,'',location.pathname)}}catch(e){}
+  /* ---- tester sign-out: add ?signout=1 to the link to forget the code on this phone and start from the code screen ---- */
+  try{if(/[?&]signout=1/.test(location.search)){Object.keys(localStorage).forEach(function(k){if(/^(flcode|flinv|flcourse|flakey|flfirst|flgoto|flchat_|fltime_|flpass_|flday_|invchat_|invtime_|invpass_|invday_|invquiz_)/.test(k))localStorage.removeItem(k)});for(var k2 in mem){if(/^(flcode|flinv|flcourse|flakey|flfirst|flgoto|flchat_|fltime_|flpass_|flday_|invchat_|invtime_|invpass_|invday_|invquiz_)/.test(k2))delete mem[k2]}code='';secs=0;stage='start';qz={a:0,c:0};ex={on:0,k:0,c:0,sched:[],miss:{},stems:{},fin:0};history.replaceState(null,'',location.pathname)}}catch(e){}
+  try{if(wantExam){set(PFX+'pass_all','1');history.replaceState(null,'',location.pathname)}}catch(e){}
+  /* ---- pull down on Home to refresh (the Home Screen app has no browser refresh) ---- */
+  (function(){
+    var ptr=$('ptr'),y0=null,dy=0,busy=false,LIM=90;
+    function homeOn(){var a=$('app');return a&&!a.hidden&&a.classList.contains('home')&&$('intro').hidden&&$('sideBox').hidden&&$('leaveBox').hidden}
+    function say(t){ptr.textContent=t;ptr.hidden=false}
+    function pos(v){ptr.style.transform='translate(-50%,'+(v-70)+'px)'}
+    function reset(){ptr.classList.add('go');pos(0);ptr.classList.remove('on');setTimeout(function(){ptr.classList.remove('go');ptr.hidden=true;pos(-70)},200)}
+    document.addEventListener('touchstart',function(e){
+      if(busy||e.touches.length!==1||!homeOn()||(window.scrollY||document.documentElement.scrollTop)>0){y0=null;return}
+      y0=e.touches[0].clientY;dy=0;
+    },{passive:true});
+    document.addEventListener('touchmove',function(e){
+      if(y0===null||busy)return;
+      dy=e.touches[0].clientY-y0;
+      if(dy<=8){ptr.classList.remove('on');return}
+      var v=Math.min(dy*0.5,70);
+      say(dy>=LIM?'Release to refresh':'Pull down to refresh');
+      ptr.classList.remove('go');ptr.classList.add('on');pos(v);
+    },{passive:true});
+    document.addEventListener('touchend',function(){
+      if(y0===null||busy){y0=null;return}
+      var go=dy>=LIM;y0=null;dy=0;
+      if(!go){reset();return}
+      busy=true;say('Refreshing...');ptr.classList.add('on','go');pos(40);
+      var done=false;
+      function fail(){if(done)return;done=true;say('No connection. Check wifi and try again.');setTimeout(function(){busy=false;reset()},3000)}
+      var to=setTimeout(fail,8000);
+      fetch(location.pathname,{cache:'reload'}).then(function(r){
+        if(done)return;
+        if(!r.ok)throw 0;
+        done=true;clearTimeout(to);location.reload();
+      }).catch(function(){clearTimeout(to);fail()});
+    },{passive:true});
+    document.addEventListener('touchcancel',function(){y0=null;dy=0;if(!busy)reset()},{passive:true});
+  })();
+  /* ---- boot ---- */
+  if(code){
+    post({code:code,action:'state'}).then(function(r){
+      var u=parseUnlocked(r.text);
+      if(r.status===401){code='';set('flcode','');set('flinv','');set('flcourse','fl');showGate();return}
+      if(u===null){unlocked=1}else unlocked=u;
+      openApp();
+    }).catch(function(){openApp()});
+  } else showGate();
+})();
+</script>
+
+</body></html>
